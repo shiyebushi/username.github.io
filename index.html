@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>萌物星球 - 官方潮流玩偶商城</title>
+    <style>
+        /* 基础样式 */
+        :root {
+            --primary: #FF69B4;  /* 粉红色 */
+            --secondary: #FFB6C1; /* 浅粉色 */
+            --dark: #4A4A4A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Comic Sans MS', cursive;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-links a {
+            margin: 0 1rem;
+            color: var(--dark);
+            text-decoration: none;
+        }
+
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            padding: 2px 8px;
+        }
+
+        /* 商品展示区 */
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .product-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .product-title {
+            margin: 1rem 0;
+            color: var(--dark);
+        }
+
+        .product-price {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .add-to-cart {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        /* 购物车侧边栏 */
+        .cart-sidebar {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            transition: 0.3s;
+            padding: 2rem;
+        }
+
+        .cart-sidebar.active {
+            right: 0;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-item img {
+            width: 60px;
+            height: 60px;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <a href="#" class="logo">萌物星球✨</a>
+        <div class="nav-links">
+            <a href="#new">新品上市</a>
+            <a href="#hot">热销榜单</a>
+            <a href="#collection">主题系列</a>
+        </div>
+        <div class="cart-icon" onclick="toggleCart()">
+            🛒
+            <span class="cart-count" id="cartCount">0</span>
+        </div>
+    </nav>
+
+    <!-- 商品列表 -->
+    <div class="products" id="productList">
+        <!-- 商品数据通过JS动态生成 -->
+    </div>
+
+    <!-- 购物车侧边栏 -->
+    <div class="cart-sidebar" id="cartSidebar">
+        <h2>我的购物车</h2>
+        <div id="cartItems"></div>
+        <p>总计：¥<span id="totalPrice">0</span></p>
+    </div>
+
+    <script>
+        // 使用真实可访问的图片链接
+        const products = [
+            {
+                id: 1,
+                name: '星云小兔',
+                price: 299,
+                image: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: 2,
+                name: '宇宙柴犬',
+                price: 399,
+                image: 'https://images.unsplash.com/photo-1560807707-8cc77767d783?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: 3,
+                name: '银河熊猫',
+                price: 499,
+                image: 'https://images.unsplash.com/photo-1559268950-2d7ceb2efa3a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: 4,
+                name: '星际企鹅',
+                price: 599,
+                image: 'https://images.unsplash.com/photo-1584555684046-b0eee25b7781?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
+            }
+        ]
+
+        // 购物车数据
+        let cart = [];
+
+        // 初始化商品列表
+        function renderProducts() {
+            const container = document.getElementById('productList');
+            container.innerHTML = products.map(product => `
+                <div class="product-card">
+                    <img src="${product.image}" class="product-img" alt="${product.name}">
+                    <h3 class="product-title">${product.name}</h3>
+                    <p class="product-price">¥${product.price}</p>
+                    <button class="add-to-cart" onclick="addToCart(${product.id})">加入购物车</button>
+                </div>
+            `).join('');
+        }
+
+        // 添加到购物车
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if(existingItem) {
+                existingItem.quantity++;
+            } else {
+                cart.push({...product, quantity: 1});
+            }
+            
+            updateCartDisplay();
+        }
+
+        // 更新购物车显示
+        function updateCartDisplay() {
+            document.getElementById('cartCount').textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+            
+            const cartItems = document.getElementById('cartItems');
+            cartItems.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                    <img src="${item.image}" alt="${item.name}">
+                    <div>
+                        <h4>${item.name}</h4>
+                        <p>¥${item.price} x ${item.quantity}</p>
+                        <button onclick="removeItem(${item.id})">移除</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('totalPrice').textContent = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        }
+
+        // 切换购物车显示
+        function toggleCart() {
+            document.getElementById('cartSidebar').classList.toggle('active');
+        }
+
+        // 移除商品
+        function removeItem(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCartDisplay();
+        }
+
+        // 初始化
+        renderProducts();
+    </script>
+</body>
+</html>
